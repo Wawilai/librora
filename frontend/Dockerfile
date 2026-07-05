@@ -37,9 +37,10 @@ WORKDIR /app
 COPY --from=builder /app/.output ./.output
 
 ENV NODE_ENV=production
-# PORT is read by Nitro/srvx at startup
-ENV PORT=4173
-
-EXPOSE 4173
-
+# No hardcoded PORT/EXPOSE — Nitro/srvx reads process.env.PORT at startup, and
+# a fixed value here would always win over Railway's dynamically injected
+# PORT, causing the same "listens on the wrong port, healthcheck times out"
+# failure seen on the api service (see backend/apps/api/Dockerfile). Local
+# Docker Compose still gets PORT=4173 explicitly via docker-compose.yml's
+# `environment:` block.
 CMD ["node", ".output/server/index.mjs"]

@@ -40,7 +40,11 @@ COPY --from=builder /deploy ./
 RUN prisma generate --schema=prisma/schema.prisma
 
 ENV NODE_ENV=production
-ENV API_PORT=3001
-EXPOSE 3001
-
+# No hardcoded API_PORT/EXPOSE — main.ts falls back to Railway's dynamically
+# injected PORT env var (process.env.API_PORT ?? process.env.PORT ?? "3001").
+# A fixed EXPOSE/ENV here previously always won over Railway's PORT, so the
+# app listened on 3001 while Railway's proxy routed to its own assigned port,
+# and every healthcheck timed out as "service unavailable". Local Docker
+# Compose still gets API_PORT=3001 explicitly via docker-compose.yml's
+# `environment:` block, so that setup is unaffected.
 CMD ["node", "dist/main"]
