@@ -55,6 +55,14 @@ export class BillingService {
     const priceId = this.config.get<string>(
       interval === "yearly" ? "stripe.premiumPriceIdYearly" : "stripe.premiumPriceIdMonthly",
     );
+    // TEMPORARY diagnostic — remove once the Railway env var mismatch is
+    // resolved. Logs server-side only (not returned to the client), masks
+    // most of the value so it's still safe to appear in Railway's log viewer.
+    this.logger.warn(
+      `[DEBUG] interval=${interval} rawEnvMonthly=${JSON.stringify(process.env.STRIPE_PREMIUM_PRICE_ID_MONTHLY)} ` +
+        `rawEnvYearly=${JSON.stringify(process.env.STRIPE_PREMIUM_PRICE_ID_YEARLY)} ` +
+        `resolvedPriceId=${priceId ? priceId.slice(0, 8) + "..." : JSON.stringify(priceId)}`,
+    );
     if (!priceId) {
       // Fail loud and specific here rather than sending Stripe an empty/undefined
       // price and getting back an opaque, unhandled 500 — this is exactly the
