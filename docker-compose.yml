@@ -1,0 +1,129 @@
+# Librora — Full Stack Docker Compose
+# Ports (all unique, no conflicts):
+#   4173  → frontend  (Nitro node-server)
+#   3001  → api       (NestJS Fastify)
+#   6379  → redis     (BullMQ queue)
+#   6333  → qdrant    (HTTP / Web UI)
+#   6334  → qdrant    (gRPC)
+#
+# Usage:
+#   cp backend/.env.example backend/.env   # fill real values
+#   docker compose up --build -d
+
+services:
+
+  # ── Infrastructure ─────────────────────────────────────────────────────────
+
+  redis:
+    image: redis:7-alpine
+    container_name: librora_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: librora_qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: "6334"
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 1 bash -c 'cat < /dev/null > /dev/tcp/localhost/6333' && echo ok || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend API ─────────────────────────────────────────────────────────────
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: apps/api/Dockerfile
+    image: librora-api
+    container_name: librora_api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./backend/.env
+    environment:
+      API_PORT: "3001"
+      REDIS_URL: redis://redis:6379
+      QDRANT_URL: http://qdrant:6333
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/v1/auth/session || exit 0"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ── Background Worker ───────────────────────────────────────────────────────
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: apps/worker/Dockerfile
+    image: librora-worker
+    container_name: librora_worker
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      REDIS_URL: redis://redis:6379
+      QDRANT_URL: http://qdrant:6333
+    depends_on:
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+
+  # ── Frontend ────────────────────────────────────────────────────────────────
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # Vite inlines import.meta.env.* statically at build time — these must
+      # be build args (visible to `docker build`), not just container-runtime
+      # environment vars below, or the client bundle never picks them up.
+      # Pulled from backend/.env-style local files at build time; re-run
+      # `docker compose build frontend` after changing either value.
+      args:
+        VITE_API_URL: http://api:3001
+        VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
+    image: librora-frontend
+    container_name: librora_frontend
+    restart: unless-stopped
+    ports:
+      - "4173:4173"
+    environment:
+      NODE_ENV: production
+      PORT: "4173"
+      # Also needed at container runtime for SSR fetch calls (separate from
+      # the client bundle's build-time copy above).
+      VITE_API_URL: http://api:3001
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  redis_data:
+  qdrant_data:

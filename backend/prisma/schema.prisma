@@ -1,0 +1,300 @@
+// Librora — Prisma Schema
+// Database: Supabase PostgreSQL
+// Run: pnpm db:migrate (from monorepo root)
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_DIRECT") // for migrations (bypasses pooler)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Users & Auth
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  emailNorm    String     @unique @map("email_norm")
+  passwordHash String     @map("password_hash")
+  displayName  String     @map("display_name")
+  status       UserStatus @default(ACTIVE)
+  // Premium-only weekly digest email opt-out — checked by the digest sweep
+  // regardless of plan so a downgraded user's existing preference is preserved.
+  digestEnabled Boolean   @default(true) @map("digest_enabled")
+  // Null until the user clicks the link in their verification email — login()
+  // refuses to issue tokens until this is set, so a bot flooding /auth/register
+  // can create rows but can never actually use the accounts (see AuthService).
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at") // soft delete; purge job removes after grace period
+
+  refreshTokens          RefreshToken[]
+  subscription           Subscription?
+  items                  LibraryItem[]
+  usagePeriods           UsagePeriod[]
+  passwordResetTokens    PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  bookshelfRules         BookshelfRule[]
+
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  client    String    @default("web") // "web" | "extension"
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Subscriptions & Usage
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique @map("user_id")
+  plan                 PlanCode
+  status               SubscriptionStatus @default(ACTIVE)
+  startedAt            DateTime           @default(now()) @map("started_at")
+  expiresAt            DateTime?          @map("expires_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  stripeCustomerId     String?            @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?            @unique @map("stripe_subscription_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+enum PlanCode {
+  FREE
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+}
+
+model UsagePeriod {
+  id               String @id @default(cuid())
+  userId           String @map("user_id")
+  period           String // "YYYY-MM"
+  itemsAdded       Int    @default(0) @map("items_added")
+  aiAbstractsUsed  Int    @default(0) @map("ai_abstracts_used")
+  semanticSearches Int    @default(0) @map("semantic_searches")
+  reprocessCount   Int    @default(0) @map("reprocess_count")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, period])
+  @@map("usage_periods")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Library Items
+// ─────────────────────────────────────────────────────────────────────────────
+
+model LibraryItem {
+  id              String                @id @default(cuid())
+  userId          String                @map("user_id")
+  url             String
+  urlNorm         String                @map("url_norm")
+  domain          String
+  faviconLetter   String                @map("favicon_letter")
+  title           String
+  customTitle     String?               @map("custom_title")
+  extractedTitle  String?               @map("extracted_title")
+  description     String?
+  personalNote    String?               @map("personal_note")
+  status          ItemStatus            @default(PENDING)
+  sourceType      SourceType            @default(ARTICLE) @map("source_type")
+  bookshelf       String?
+  bookshelfSource ClassificationSource? @map("bookshelf_source")
+  aiAbstract      String?               @map("ai_abstract")
+  readableContent String?               @map("readable_content")
+  // HTML form of the extracted article (Readability output) — kept alongside
+  // the plain-text readableContent specifically so export (Phase 2) can
+  // produce real Markdown/EPUB formatting instead of flat text.
+  readableContentHtml String?          @map("readable_content_html")
+  language        String?
+  author          String?
+  publishedDate   String?               @map("published_date")
+  inReadingList   Boolean               @default(false) @map("in_reading_list")
+  archived        Boolean               @default(false)
+  failureReason   String?               @map("failure_reason")
+  partialReason   String?               @map("partial_reason")
+  processedAt     DateTime?             @map("processed_at")
+  addedAt         DateTime              @default(now()) @map("added_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  deletedAt       DateTime?             @map("deleted_at") // soft delete
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags          ItemTag[]
+  tocEntries    TocEntry[]
+  processingJob ProcessingJob?
+
+  @@unique([userId, urlNorm])
+  @@index([userId, archived, deletedAt])
+  @@index([userId, status])
+  @@index([userId, inReadingList])
+  @@map("library_items")
+}
+
+enum ItemStatus {
+  PENDING
+  PROCESSING
+  READY
+  PARTIAL
+  FAILED
+}
+
+enum SourceType {
+  ARTICLE
+  GOOGLE_DOC
+}
+
+enum ClassificationSource {
+  AUTO
+  MANUAL
+}
+
+model ItemTag {
+  itemId String              @map("item_id")
+  tag    String
+  source ClassificationSource @default(MANUAL)
+
+  item LibraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tag])
+  @@index([tag])
+  @@map("item_tags")
+}
+
+model TocEntry {
+  id     String              @id @default(cuid())
+  itemId String              @map("item_id")
+  level  Int
+  text   String
+  anchor String
+  source ClassificationSource @default(AUTO)
+  order  Int
+
+  item LibraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId, order])
+  @@map("toc_entries")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bookshelf Rules (Premium: bulk auto-archive / auto-tag)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model BookshelfRule {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  type      RuleType
+  config    Json // { days: number } for AUTO_ARCHIVE_AFTER_DAYS, { domain: string, tag: string } for AUTO_TAG_BY_DOMAIN
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("bookshelf_rules")
+}
+
+enum RuleType {
+  AUTO_ARCHIVE_AFTER_DAYS
+  AUTO_TAG_BY_DOMAIN
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Processing Jobs (Transactional Outbox pattern)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ProcessingJob {
+  id              String          @id @default(cuid())
+  itemId          String          @unique @map("item_id")
+  dispatchStatus  DispatchStatus  @default(PENDING_DISPATCH) @map("dispatch_status")
+  executionStatus ExecutionStatus @default(QUEUED) @map("execution_status")
+  attempt         Int             @default(0)
+  maxAttempts     Int             @default(3) @map("max_attempts")
+  lastError       String?         @map("last_error")
+  scheduledAt     DateTime        @default(now()) @map("scheduled_at")
+  startedAt       DateTime?       @map("started_at")
+  completedAt     DateTime?       @map("completed_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  item LibraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([dispatchStatus])
+  @@index([dispatchStatus, scheduledAt])
+  @@map("processing_jobs")
+}
+
+enum DispatchStatus {
+  PENDING_DISPATCH
+  QUEUED
+  DISPATCH_FAILED
+}
+
+enum ExecutionStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  SKIPPED
+}

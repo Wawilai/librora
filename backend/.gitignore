@@ -1,0 +1,13 @@
+# Environment secrets
+.env
+.env.local
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+apps/*/dist/
+
+# Logs
+*.log
