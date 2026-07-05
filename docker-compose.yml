@@ -109,6 +109,7 @@ services:
       args:
         VITE_API_URL: http://api:3001
         VITE_TURNSTILE_SITE_KEY: ${VITE_TURNSTILE_SITE_KEY:-}
+        VITE_EXTENSION_ID: ${VITE_EXTENSION_ID:-}
     image: librora-frontend
     container_name: librora_frontend
     restart: unless-stopped
