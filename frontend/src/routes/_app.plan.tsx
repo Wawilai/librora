@@ -1,15 +1,14 @@
 import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { PageHeader } from "@/components/librora/page-header";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Check, Gauge, Info, Lock, RefreshCcw, Loader2 } from "lucide-react";
+import { Sparkles, CheckCircle2, Gauge, Info, Lock, RefreshCcw, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { adapter, ApiError, type PlanUsage } from "@/lib/api";
 import { ErrorState, LoadingSkeleton } from "@/components/librora/shared-states";
-import { SegmentedControl } from "@/components/librora/segmented-control";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useI18n } from "@/lib/i18n";
+import { DICTS, useI18n } from "@/lib/i18n";
 
 const PlanSearchSchema = z.object({
   checkout: z.enum(["success", "cancelled"]).optional(),
@@ -108,6 +107,10 @@ function PlanPage() {
   const isPremium = usage?.subscription.planCode === "PREMIUM";
   const metric = (name: PlanUsage["usage"][number]["metric"]) =>
     usage?.usage.find((u) => u.metric === name) ?? { used: 0, limit: 0, remaining: 0 };
+  // Reuse the landing page's plan copy (frontend/src/routes/index.tsx's
+  // PlansOverview) so pricing/feature-list text has one source of truth
+  // instead of duplicating it under separate planPage.feature* keys.
+  const planCopy = DICTS[lang].landing.plans;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
@@ -147,32 +150,11 @@ function PlanPage() {
                 {t("planPage.cycleLine", { period: periodLabel, reset: resetLabel })}
               </p>
             </div>
-            {isPremium ? (
+            {isPremium && (
               <Button variant="outline" onClick={handleManageBilling} disabled={portalBusy}>
                 {portalBusy ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : null}
                 {t("planPage.manageBilling")}
               </Button>
-            ) : (
-              <div className="flex flex-col items-end gap-2">
-                <SegmentedControl
-                  size="sm"
-                  value={billingInterval}
-                  onChange={setBillingInterval}
-                  ariaLabel={t("planPage.billingInterval")}
-                  options={[
-                    { value: "monthly", label: t("planPage.monthly") },
-                    { value: "yearly", label: t("planPage.yearly") },
-                  ]}
-                />
-                <Button onClick={handleUpgrade} disabled={checkoutBusy}>
-                  {checkoutBusy ? (
-                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-1.5 h-4 w-4" />
-                  )}
-                  {t("planPage.upgrade")}
-                </Button>
-              </div>
             )}
           </div>
 
@@ -210,36 +192,39 @@ function PlanPage() {
             {t("planPage.planComparison")}
           </h2>
           <div className="grid gap-5 lg:grid-cols-2">
-            <PlanColumn
-              title={t("planPage.free")}
-              tagline={t("planPage.freeTagline")}
+            <PlanCard
+              title={planCopy.free.title}
+              tagline={planCopy.free.tagline}
+              price={planCopy.free.price}
+              priceNote={planCopy.free.priceNote}
+              features={planCopy.free.features}
               current={!isPremium}
-              features={[
-                t("planPage.featurePersonalLibrary"),
-                t("planPage.featureAddUrl"),
-                t("planPage.featureMetadata"),
-                t("planPage.featureManualTags"),
-                t("planPage.featureKeywordSearch"),
-                t("planPage.featurePersonalNote"),
-                t("planPage.featureReadingList"),
-                t("planPage.featureArchive"),
-              ]}
             />
-            <PlanColumn
-              title={t("planPage.premium")}
-              tagline={t("planPage.premiumTagline")}
+            <PlanCard
+              title={planCopy.premium.title}
+              tagline={planCopy.premium.tagline}
+              price={planCopy.premium.price}
+              priceNote={planCopy.premium.priceNote}
+              yearlyPrice={planCopy.premium.yearlyPrice}
+              yearlyNote={planCopy.premium.yearlyNote}
+              savings={planCopy.premium.savings}
+              features={planCopy.premium.features}
               highlight
               current={isPremium}
-              features={[
-                t("planPage.featureEverythingFree"),
-                t("planPage.featureAiAbstract"),
-                t("planPage.featureAutoTags"),
-                t("planPage.featureSmartBookshelves"),
-                t("planPage.semanticSearch"),
-                t("planPage.featureSmartToc"),
-                t("planPage.reprocess"),
-                t("planPage.featureHigherQuota"),
-              ]}
+              cta={
+                isPremium ? undefined : (
+                  <Button className="mt-6 w-full" onClick={handleUpgrade} disabled={checkoutBusy}>
+                    {checkoutBusy ? (
+                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="mr-1.5 h-4 w-4" />
+                    )}
+                    {t("planPage.upgrade")}
+                  </Button>
+                )
+              }
+              onYearlyToggle={isPremium ? undefined : setBillingInterval}
+              billingInterval={billingInterval}
             />
           </div>
 
@@ -319,33 +304,53 @@ function UsageDetailCard({
   );
 }
 
-function PlanColumn({
+// Styled after PlansOverview's PlanCard on the landing page (frontend/src/routes/index.tsx)
+// so the authenticated Plan & Usage page and the public marketing page look
+// like the same pricing table, not two different designs.
+function PlanCard({
   title,
   tagline,
+  price,
+  priceNote,
+  yearlyPrice,
+  yearlyNote,
+  savings,
   features,
   highlight,
   current,
+  cta,
+  onYearlyToggle,
+  billingInterval,
 }: {
   title: string;
   tagline: string;
-  features: string[];
+  price: string;
+  priceNote: string;
+  yearlyPrice?: string;
+  yearlyNote?: string;
+  savings?: string;
+  features: readonly string[];
   highlight?: boolean;
   current?: boolean;
+  cta?: React.ReactNode;
+  onYearlyToggle?: (interval: "monthly" | "yearly") => void;
+  billingInterval?: "monthly" | "yearly";
 }) {
   const { t } = useI18n();
+  const showYearlyBox = !!yearlyPrice;
 
   return (
     <div
-      className={`rounded-2xl border p-6 ${
+      className={`rounded-2xl border p-6 sm:p-7 ${
         highlight
-          ? "border-[color-mix(in_oklab,var(--premium)_40%,var(--border))] bg-[color-mix(in_oklab,var(--premium)_5%,var(--card))]"
+          ? "border-[color-mix(in_oklab,var(--premium)_40%,var(--border))] bg-[color-mix(in_oklab,var(--premium)_6%,var(--card))]"
           : "border-border bg-card"
       }`}
     >
       <div className="flex items-center gap-2">
         <h3 className="font-display text-2xl font-medium">{title}</h3>
         {highlight && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--premium)_20%,transparent)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--premium-foreground)]">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--premium)_18%,transparent)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[color-mix(in_oklab,var(--premium)_60%,var(--foreground))]">
             <Sparkles className="h-3 w-3" /> {t("planPage.premium")}
           </span>
         )}
@@ -356,14 +361,61 @@ function PlanColumn({
         )}
       </div>
       <p className="mt-1 text-sm text-muted-foreground">{tagline}</p>
-      <ul className="mt-5 space-y-2 text-sm">
+
+      <div className="mt-5">
+        <p className="font-display text-4xl font-medium tracking-tight text-foreground">
+          {billingInterval === "yearly" && yearlyPrice ? yearlyPrice : price}
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {billingInterval === "yearly" && yearlyNote ? yearlyNote : priceNote}
+        </p>
+        {showYearlyBox && onYearlyToggle && (
+          <div className="mt-4 rounded-lg border border-border bg-background/70 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm">
+                <button
+                  type="button"
+                  onClick={() => onYearlyToggle("monthly")}
+                  className={`rounded-full px-2.5 py-1 font-medium transition-colors ${
+                    billingInterval !== "yearly"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t("planPage.monthly")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onYearlyToggle("yearly")}
+                  className={`rounded-full px-2.5 py-1 font-medium transition-colors ${
+                    billingInterval === "yearly"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t("planPage.yearly")}
+                </button>
+              </div>
+              {savings && (
+                <span className="rounded-full bg-[color-mix(in_oklab,var(--status-ready)_12%,transparent)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--status-ready)]">
+                  {savings}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <ul className="mt-5 space-y-2.5 text-sm">
         {features.map((f) => (
-          <li key={f} className="flex items-start gap-2 text-foreground/80">
-            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            {f}
+          <li key={f} className="flex items-start gap-2 text-foreground/85">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[var(--status-ready)]" />
+            <span>{f}</span>
           </li>
         ))}
       </ul>
+
+      {cta}
     </div>
   );
 }
