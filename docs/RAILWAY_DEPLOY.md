@@ -41,7 +41,8 @@ Environment variables (Railway → service → Variables):
 | `STRIPE_SECRET_KEY` | **live** key (not test) once ready to charge real users |
 | `STRIPE_PUBLISHABLE_KEY` | live key |
 | `STRIPE_WEBHOOK_SECRET` | from the Stripe webhook endpoint you'll configure to point at `https://<api-domain>/api/v1/billing/webhook` |
-| `STRIPE_PREMIUM_PRICE_ID` | live price ID |
+| `STRIPE_PREMIUM_PRICE_ID_MONTHLY` | live monthly Price ID — starts with `price_`, **not** `prod_` (that's the Product ID; pasting it here causes `checkout-session` to 500) |
+| `STRIPE_PREMIUM_PRICE_ID_YEARLY` | live yearly Price ID, same `price_` caveat |
 | `EXTENSION_ORIGIN` | `chrome-extension://<production-extension-id>` — only known after the extension is published; leave blank until then, CORS just won't allow-list the extension's popup calls until set |
 | `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key — leave unset and registration skips CAPTCHA verification (not recommended for production) |
 

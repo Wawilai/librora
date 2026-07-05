@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Body,
   Req,
   Headers,
   HttpCode,
@@ -9,9 +10,15 @@ import {
   RawBodyRequest,
 } from "@nestjs/common";
 import { FastifyRequest } from "fastify";
+import { z } from "zod";
 import { BillingService } from "./billing.service";
 import { CurrentUser, JwtPayload } from "../common/decorators/current-user.decorator";
 import { Public } from "../common/decorators/public.decorator";
+import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
+
+const CheckoutSessionSchema = z.object({
+  interval: z.enum(["monthly", "yearly"]),
+});
 
 @Controller("billing")
 export class BillingController {
@@ -19,8 +26,12 @@ export class BillingController {
 
   @Post("checkout-session")
   @HttpCode(HttpStatus.OK)
-  createCheckoutSession(@CurrentUser() u: JwtPayload) {
-    return this.billing.createCheckoutSession(u.sub);
+  createCheckoutSession(
+    @CurrentUser() u: JwtPayload,
+    @Body(new ZodValidationPipe(CheckoutSessionSchema))
+    dto: z.infer<typeof CheckoutSessionSchema>,
+  ) {
+    return this.billing.createCheckoutSession(u.sub, dto.interval);
   }
 
   @Post("portal-session")

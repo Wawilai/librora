@@ -1,8 +1,8 @@
 import { defineManifest } from "@crxjs/vite-plugin";
 import pkg from "./package.json";
 
-const WEB_ORIGIN = process.env.VITE_WEB_ORIGIN ?? "http://localhost:4173";
-const API_ORIGIN = process.env.VITE_API_ORIGIN ?? "http://localhost:3001";
+const WEB_ORIGIN = process.env.VITE_WEB_ORIGIN ?? "https://app.librora.xyz";
+const API_ORIGIN = process.env.VITE_API_ORIGIN ?? "https://api.librora.xyz";
 
 export default defineManifest({
   manifest_version: 3,

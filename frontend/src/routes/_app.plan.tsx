@@ -5,6 +5,7 @@ import { Sparkles, Check, Gauge, Info, Lock, RefreshCcw, Loader2 } from "lucide-
 import { useEffect, useMemo, useState } from "react";
 import { adapter, ApiError, type PlanUsage } from "@/lib/api";
 import { ErrorState, LoadingSkeleton } from "@/components/librora/shared-states";
+import { SegmentedControl } from "@/components/librora/segmented-control";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -30,6 +31,7 @@ function PlanPage() {
   const [error, setError] = useState(false);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
 
   const load = () => {
     setLoading(true);
@@ -63,7 +65,7 @@ function PlanPage() {
   const handleUpgrade = async () => {
     setCheckoutBusy(true);
     try {
-      const { url } = await adapter.billing.createCheckoutSession();
+      const { url } = await adapter.billing.createCheckoutSession(billingInterval);
       window.location.href = url;
     } catch (err) {
       // Surface the backend's actual reason (e.g. Stripe not configured) rather
@@ -151,14 +153,26 @@ function PlanPage() {
                 {t("planPage.manageBilling")}
               </Button>
             ) : (
-              <Button onClick={handleUpgrade} disabled={checkoutBusy}>
-                {checkoutBusy ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="mr-1.5 h-4 w-4" />
-                )}
-                {t("planPage.upgrade")}
-              </Button>
+              <div className="flex flex-col items-end gap-2">
+                <SegmentedControl
+                  size="sm"
+                  value={billingInterval}
+                  onChange={setBillingInterval}
+                  ariaLabel={t("planPage.billingInterval")}
+                  options={[
+                    { value: "monthly", label: t("planPage.monthly") },
+                    { value: "yearly", label: t("planPage.yearly") },
+                  ]}
+                />
+                <Button onClick={handleUpgrade} disabled={checkoutBusy}>
+                  {checkoutBusy ? (
+                    <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-1.5 h-4 w-4" />
+                  )}
+                  {t("planPage.upgrade")}
+                </Button>
+              </div>
             )}
           </div>
 

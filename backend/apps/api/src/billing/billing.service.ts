@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+  BadRequestException,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../prisma/prisma.service";
 import Stripe = require("stripe");
@@ -40,8 +46,26 @@ export class BillingService {
     return this.stripe;
   }
 
-  async createCheckoutSession(userId: string): Promise<{ url: string }> {
+  async createCheckoutSession(
+    userId: string,
+    interval: "monthly" | "yearly",
+  ): Promise<{ url: string }> {
     const stripe = this.requireStripe();
+
+    const priceId = this.config.get<string>(
+      interval === "yearly" ? "stripe.premiumPriceIdYearly" : "stripe.premiumPriceIdMonthly",
+    );
+    if (!priceId) {
+      // Fail loud and specific here rather than sending Stripe an empty/undefined
+      // price and getting back an opaque, unhandled 500 — this is exactly the
+      // production bug that motivated this check (a Product ID was pasted into
+      // the price env var by mistake, and Stripe's rejection wasn't caught).
+      throw new BadRequestException({
+        code: "INVALID_BILLING_INTERVAL",
+        message: `Billing is not configured for the "${interval}" plan yet`,
+      });
+    }
+
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException({ code: "USER_NOT_FOUND", message: "User not found" });
 
@@ -53,7 +77,7 @@ export class BillingService {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: this.config.get<string>("stripe.premiumPriceId")!, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${webBaseUrl}/plan?checkout=success`,
       cancel_url: `${webBaseUrl}/plan?checkout=cancelled`,
       client_reference_id: userId,

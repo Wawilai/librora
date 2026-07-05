@@ -50,7 +50,8 @@ export default () => ({
     secretKey: process.env.STRIPE_SECRET_KEY ?? "",
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? "",
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
-    premiumPriceId: process.env.STRIPE_PREMIUM_PRICE_ID ?? "",
+    premiumPriceIdMonthly: process.env.STRIPE_PREMIUM_PRICE_ID_MONTHLY ?? "",
+    premiumPriceIdYearly: process.env.STRIPE_PREMIUM_PRICE_ID_YEARLY ?? "",
   },
   turnstile: {
     secretKey: process.env.TURNSTILE_SECRET_KEY ?? "",

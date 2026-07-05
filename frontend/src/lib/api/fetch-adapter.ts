@@ -422,8 +422,8 @@ export const fetchAdapter: ApiClient = {
   },
 
   billing: {
-    async createCheckoutSession() {
-      return request<{ url: string }>("POST", "/billing/checkout-session");
+    async createCheckoutSession(interval) {
+      return request<{ url: string }>("POST", "/billing/checkout-session", { interval });
     },
     async createPortalSession() {
       return request<{ url: string }>("POST", "/billing/portal-session");

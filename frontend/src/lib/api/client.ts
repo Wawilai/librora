@@ -82,7 +82,7 @@ export interface ApiClient {
     planUsage(): Promise<PlanUsage>;
   };
   billing: {
-    createCheckoutSession(): Promise<{ url: string }>;
+    createCheckoutSession(interval: "monthly" | "yearly"): Promise<{ url: string }>;
     createPortalSession(): Promise<{ url: string }>;
   };
   auth: {
