@@ -6,6 +6,7 @@ import { AuthShell, Banner, Field } from "./login";
 import { Input } from "@/components/ui/input";
 import { adapter, ApiError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { authErrorKey } from "@/lib/auth-error";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
@@ -43,11 +44,7 @@ function ForgotPasswordPage() {
       setSent(true);
     } catch (err) {
       setServerError(
-        err instanceof ApiError && err.code === "PASSWORD_RESET_NOT_AVAILABLE"
-          ? t("auth.passwordResetUnavailable")
-          : err instanceof Error
-            ? err.message
-            : t("auth.passwordResetUnavailable"),
+        err instanceof ApiError ? t(authErrorKey(err.code)) : t("auth.genericAuthError"),
       );
     } finally {
       setSubmitting(false);

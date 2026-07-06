@@ -9,6 +9,7 @@ import { BookOpen, Eye, EyeOff, Loader2, WifiOff, AlertCircle } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { TurnstileWidget } from "@/components/librora/turnstile-widget";
 import { useT } from "@/lib/i18n";
+import { authErrorKey } from "@/lib/auth-error";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -65,11 +66,11 @@ function LoginPage() {
           // the widget and let the user retry with a token. Most users never
           // hit this path.
           setCaptchaRequired(true);
-          setAuthError(err.message);
+          setAuthError(t(authErrorKey(err.code)));
         } else if (err.httpStatus === 0) {
-          setNetworkError(err.message);
+          setNetworkError(t("auth.networkError"));
         } else {
-          setAuthError(err.message);
+          setAuthError(t(authErrorKey(err.code)));
         }
         setSubmitting(false);
         return;

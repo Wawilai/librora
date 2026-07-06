@@ -8,6 +8,7 @@ import { AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 import { AuthShell, Banner } from "./login";
 import { TurnstileWidget, isTurnstileConfigured } from "@/components/librora/turnstile-widget";
 import { useT } from "@/lib/i18n";
+import { authErrorKey } from "@/lib/auth-error";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -53,15 +54,8 @@ function RegisterPage() {
       });
       setPendingEmail(result.email);
     } catch (err) {
-      if (
-        err instanceof ApiError &&
-        (err.code === "VALIDATION_ERROR" ||
-          err.code === "AUTH_EMAIL_ALREADY_EXISTS" ||
-          err.code === "CAPTCHA_VERIFICATION_FAILED")
-      ) {
-        setAuthError(
-          err.code === "CAPTCHA_VERIFICATION_FAILED" ? t("auth.captchaFailedError") : err.message,
-        );
+      if (err instanceof ApiError) {
+        setAuthError(t(authErrorKey(err.code)));
         setSubmitting(false);
         return;
       }

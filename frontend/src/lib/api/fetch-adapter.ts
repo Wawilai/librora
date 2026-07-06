@@ -79,7 +79,7 @@ async function request<T>(
     throw new ApiError({
       code: "RATE_LIMIT_EXCEEDED" as ApiErrorCode, // closest network-error code
       httpStatus: 0,
-      message: "เชื่อมต่อเครือข่ายไม่สำเร็จ ลองอีกครั้ง",
+      message: "Network request failed. Please try again.",
     });
   }
 
@@ -100,7 +100,7 @@ async function request<T>(
     throw new ApiError({
       code: (err.code as ApiErrorCode) ?? "VALIDATION_ERROR",
       httpStatus: res.status,
-      message: err.message ?? "เกิดข้อผิดพลาด",
+      message: err.message ?? "Something went wrong.",
       details: err.details,
       requestId: (json as { meta: { requestId: string } }).meta?.requestId,
     });
@@ -140,7 +140,7 @@ async function requestBlob(method: string, path: string, body?: unknown): Promis
     throw new ApiError({
       code: (json.error.code as ApiErrorCode) ?? "VALIDATION_ERROR",
       httpStatus: res.status,
-      message: json.error.message ?? "เกิดข้อผิดพลาด",
+      message: json.error.message ?? "Something went wrong.",
       details: json.error.details,
       requestId: json.meta?.requestId,
     });

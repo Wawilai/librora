@@ -156,7 +156,7 @@ export class AuthService {
       await this.rateLimit.hit(failedAttemptsKey, CAPTCHA_WINDOW_SECONDS);
       throw new UnauthorizedException({
         code: "AUTH_INVALID_CREDENTIALS",
-        message: "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+        message: "Incorrect email or password",
       });
     }
 
