@@ -14,7 +14,7 @@ export class QdrantInitService implements OnModuleInit {
     });
   }
 
-  async onModuleInit() {
+  async onModuleInit(): Promise<void> {
     const collection = this.config.get<string>("qdrant.collection") ?? "librora_items";
     const dimension = this.config.get<number>("openai.embeddingDimension") ?? 1536;
 
@@ -33,9 +33,11 @@ export class QdrantInitService implements OnModuleInit {
         },
       });
 
-      this.logger.log(`Qdrant collection "${collection}" created (dim=${dimension}, distance=Cosine)`);
+      this.logger.log(
+        `Qdrant collection "${collection}" created (dimension=${dimension}, distance=Cosine)`,
+      );
     } catch (err) {
-      // Non-fatal: log and continue. The API can still serve non-semantic requests.
+      // Non-fatal: log and continue so the API still starts even if Qdrant is unreachable
       this.logger.error(
         `Failed to initialise Qdrant collection "${collection}": ${(err as Error).message}`,
       );
