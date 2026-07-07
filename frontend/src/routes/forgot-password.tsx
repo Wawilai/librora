@@ -7,13 +7,15 @@ import { Input } from "@/components/ui/input";
 import { adapter, ApiError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { authErrorKey } from "@/lib/auth-error";
+import { noIndexSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
-    meta: [
-      { title: "Reset your password - Librora" },
-      { name: "description", content: "Get a link to reset your Librora password." },
-    ],
+    meta: noIndexSeo(
+      "Reset your password - Librora",
+      "/forgot-password",
+      "Get a link to reset your Librora password.",
+    ),
   }),
   component: ForgotPasswordPage,
 });

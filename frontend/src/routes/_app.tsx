@@ -15,11 +15,15 @@ import { useStore } from "@/lib/store";
 import { adapter, ApiError } from "@/lib/api";
 import { pingExtension, handoffToExtension } from "@/lib/extension-bridge";
 import { useT } from "@/lib/i18n";
+import { noIndexSeo } from "@/lib/seo";
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { LogIn } from "lucide-react";
 
 export const Route = createFileRoute("/_app")({
+  head: () => ({
+    meta: noIndexSeo("Librora App", "/library", "Your private Librora workspace."),
+  }),
   component: AppLayout,
 });
 

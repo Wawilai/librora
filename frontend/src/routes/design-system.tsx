@@ -68,10 +68,11 @@ import { SegmentedControl } from "@/components/librora/segmented-control";
 import { SearchInput } from "@/components/librora/search-input";
 import { UsageCard } from "@/components/librora/usage-card";
 import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/librora/shared-states";
+import { noIndexSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/design-system")({
   head: () => ({
-    meta: [{ title: "Design System — Librora" }],
+    meta: noIndexSeo("Design System - Librora", "/design-system"),
   }),
   component: DesignSystemPage,
 });

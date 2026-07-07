@@ -7,15 +7,17 @@ import { AuthShell } from "./login";
 import { useStore } from "@/lib/store";
 import { adapter } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { noIndexSeo } from "@/lib/seo";
 
 const VerifyEmailSchema = z.object({ token: z.string().optional() });
 
 export const Route = createFileRoute("/verify-email")({
   head: () => ({
-    meta: [
-      { title: "Verify your email - Librora" },
-      { name: "description", content: "Confirm your Librora account email address." },
-    ],
+    meta: noIndexSeo(
+      "Verify your email - Librora",
+      "/verify-email",
+      "Confirm your Librora account email address.",
+    ),
   }),
   validateSearch: VerifyEmailSchema,
   component: VerifyEmailPage,

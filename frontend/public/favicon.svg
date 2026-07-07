@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Librora">
+  <rect width="64" height="64" rx="14" fill="#2f5d50"/>
+  <path d="M18 18.5c0-2 1.6-3.5 3.5-3.5H48v35H22c-2.2 0-4 1.8-4 4V18.5Z" fill="#f8f5ef"/>
+  <path d="M23 20h20v24H23c-1.8 0-3.5.5-5 1.5v-27c0-2 1.6-3.5 3.5-3.5H23v5Z" fill="#e8dccb"/>
+  <path d="M27 24h12M27 30h14M27 36h10" stroke="#2f5d50" stroke-width="3" stroke-linecap="round"/>
+</svg>

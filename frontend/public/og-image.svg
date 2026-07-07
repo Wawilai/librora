@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Librora personal AI library">
+  <rect width="1200" height="630" fill="#f8f5ef"/>
+  <rect x="80" y="72" width="1040" height="486" rx="36" fill="#fffaf2" stroke="#dfd4c3" stroke-width="2"/>
+  <g transform="translate(132 128)">
+    <rect width="76" height="76" rx="17" fill="#2f5d50"/>
+    <path d="M24 24c0-3.3 2.7-6 6-6h28v42H31c-3.9 0-7 3.1-7 7V24Z" fill="#f8f5ef"/>
+    <path d="M34 30h16M34 39h19M34 48h14" stroke="#2f5d50" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <text x="132" y="254" fill="#1f2f2a" font-family="Inter, Arial, sans-serif" font-size="84" font-weight="700">Librora</text>
+  <text x="132" y="326" fill="#38534a" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="500">Collect once. Recall anytime.</text>
+  <text x="132" y="385" fill="#5d6b65" font-family="Inter, Arial, sans-serif" font-size="28">A calm personal AI library for every article, note, and idea you want to remember.</text>
+  <g transform="translate(730 140)">
+    <rect width="296" height="342" rx="24" fill="#ffffff" stroke="#dfd4c3" stroke-width="2"/>
+    <rect x="28" y="32" width="88" height="14" rx="7" fill="#b9c7bf"/>
+    <rect x="28" y="70" width="214" height="20" rx="10" fill="#1f2f2a"/>
+    <rect x="28" y="102" width="180" height="16" rx="8" fill="#87958f"/>
+    <rect x="28" y="152" width="240" height="54" rx="12" fill="#eff5f2"/>
+    <rect x="28" y="226" width="240" height="54" rx="12" fill="#f3eee6"/>
+    <rect x="28" y="300" width="128" height="18" rx="9" fill="#2f5d50"/>
+  </g>
+</svg>

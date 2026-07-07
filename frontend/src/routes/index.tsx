@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { LanguageSwitcher } from "@/components/librora/language-switcher";
 import { Button } from "@/components/ui/button";
+import { absoluteUrl, canonical, seo } from "@/lib/seo";
 import { useStore } from "@/lib/store";
 import { useI18n, useT, DICTS } from "@/lib/i18n";
 import {
@@ -29,16 +30,47 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Librora — ห้องสมุด AI ส่วนตัวของคุณ" },
-      {
-        name: "description",
-        content:
+      ...seo({
+        title: "Librora — ห้องสมุด AI ส่วนตัวของคุณ",
+        description:
           "บันทึกบทความ จัดระเบียบอัตโนมัติ และค้นคืนจากสิ่งที่คุณจำได้ — Librora คือห้องสมุดส่วนตัวสำหรับทุกสิ่งที่คุณอยากจำ",
-      },
-      { property: "og:title", content: "Librora — ห้องสมุด AI ส่วนตัวของคุณ" },
+        path: "/",
+      }),
+      { property: "og:locale:alternate", content: "en_US" },
+    ],
+    links: canonical("/"),
+    scripts: [
       {
-        property: "og:description",
-        content: "Collect once. Recall anytime. ห้องสมุดส่วนตัวที่เงียบ สงบ ค้นคืนได้ทุกเวลา",
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "Librora",
+          applicationCategory: "ProductivityApplication",
+          operatingSystem: "Web",
+          url: absoluteUrl("/"),
+          description:
+            "Personal AI library for saving, organizing, reading, and searching articles and knowledge.",
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "THB",
+          },
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Librora",
+          url: absoluteUrl("/"),
+          potentialAction: {
+            "@type": "SearchAction",
+            target: `${absoluteUrl("/search")}?q={search_term_string}`,
+            "query-input": "required name=search_term_string",
+          },
+        }),
       },
     ],
   }),
@@ -173,7 +205,7 @@ function HeroComposition() {
     <div className="relative mx-auto w-full max-w-[560px]">
       {/* Background: library item card */}
       <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-elevated)]">
-        <BrowserChrome label="librora.app / library" />
+        <BrowserChrome label="app.librora.xyz / library" />
         <div className="mt-4 grid grid-cols-2 gap-3">
           <ItemCardMock
             domain="paulgraham.com"
@@ -725,7 +757,7 @@ function BookshelfMock() {
   ];
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-elevated)]">
-      <BrowserChrome label="librora.app / bookshelves" />
+      <BrowserChrome label="app.librora.xyz / bookshelves" />
       <div className="mt-4 flex items-center justify-between">
         <p className="type-section-title">Smart Bookshelves</p>
         <span className="type-caption">Auto-organized</span>
@@ -768,7 +800,7 @@ function SemanticResultMock() {
   const t = useT();
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-elevated)]">
-      <BrowserChrome label="librora.app / search" />
+      <BrowserChrome label="app.librora.xyz / search" />
       <div className="mt-4 rounded-md border border-border bg-background px-3 py-2">
         <div className="flex items-center gap-2 type-body-sm text-foreground">
           <Brain className="h-4 w-4 text-[var(--ai)]" />
@@ -840,7 +872,7 @@ function ReadingRoomMock() {
   const mock = DICTS[lang].landing.readingRoom.mock;
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-elevated)]">
-      <BrowserChrome label="librora.app / reading room" />
+      <BrowserChrome label="app.librora.xyz / reading room" />
       <div className="mt-4 grid grid-cols-[140px_1fr_140px] gap-3">
         {/* TOC */}
         <div className="hidden rounded-md border border-border bg-background p-3 sm:block">

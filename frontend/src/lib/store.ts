@@ -47,7 +47,7 @@ function notifyActionFailed() {
 
 const defaultUser: MockUser = {
   id: "usr_local",
-  email: "you@librora.app",
+  email: "you@app.librora.xyz",
   displayName: "Reader",
   plan: "free",
   initials: "R",

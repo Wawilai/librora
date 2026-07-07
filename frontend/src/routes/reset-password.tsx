@@ -9,15 +9,17 @@ import { AuthShell, Banner } from "./login";
 import { adapter, ApiError } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { authErrorKey } from "@/lib/auth-error";
+import { noIndexSeo } from "@/lib/seo";
 
 const ResetPasswordSchema = z.object({ token: z.string().optional() });
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
-    meta: [
-      { title: "Set a new password - Librora" },
-      { name: "description", content: "Choose a new password for your Librora account." },
-    ],
+    meta: noIndexSeo(
+      "Set a new password - Librora",
+      "/reset-password",
+      "Choose a new password for your Librora account.",
+    ),
   }),
   validateSearch: ResetPasswordSchema,
   component: ResetPasswordPage,

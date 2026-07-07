@@ -1,0 +1,16 @@
+{
+  "name": "Librora",
+  "short_name": "Librora",
+  "description": "A calm personal AI library for saving, organizing, reading, and searching articles.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f5ef",
+  "theme_color": "#f8f5ef",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

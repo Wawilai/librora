@@ -9,13 +9,15 @@ import { AuthShell, Banner } from "./login";
 import { TurnstileWidget, isTurnstileConfigured } from "@/components/librora/turnstile-widget";
 import { useT } from "@/lib/i18n";
 import { authErrorKey } from "@/lib/auth-error";
+import { noIndexSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
-    meta: [
-      { title: "Create your library — Librora" },
-      { name: "description", content: "Start a private AI library in seconds." },
-    ],
+    meta: noIndexSeo(
+      "Create your library - Librora",
+      "/register",
+      "Start a private AI library in seconds.",
+    ),
   }),
   component: RegisterPage,
 });
@@ -47,7 +49,7 @@ function RegisterPage() {
     try {
       const result = await adapter.auth.register({
         displayName: name || "Reader",
-        email: email || "you@librora.app",
+        email: email || "you@app.librora.xyz",
         password,
         confirmPassword,
         turnstileToken: turnstileToken ?? "",

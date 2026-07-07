@@ -20,10 +20,18 @@ import { pingExtension, handoffToExtension } from "@/lib/extension-bridge";
 import { useStore } from "@/lib/store";
 import { adapter } from "@/lib/api";
 import { useT } from "@/lib/i18n";
+import { canonical, seo } from "@/lib/seo";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export const Route = createFileRoute("/extension")({
-  head: () => ({ meta: [{ title: "Library Clipper - Librora" }] }),
+  head: () => ({
+    meta: seo({
+      title: "Library Clipper - Librora",
+      description: "Install the Librora Chrome clipper to save articles into your AI library.",
+      path: "/extension",
+    }),
+    links: canonical("/extension"),
+  }),
   component: ExtensionPage,
 });
 
@@ -321,7 +329,7 @@ function LoadUnpackedMock() {
 function ToolbarPinMock() {
   return (
     <div className="max-w-[260px] rounded-md border border-border bg-muted/30 p-3">
-      <MockWindowChrome label="librora.app" />
+      <MockWindowChrome label="app.librora.xyz" />
       <div className="mt-2 flex items-center justify-end gap-1.5">
         <Puzzle className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="grid h-5 w-5 place-items-center rounded bg-primary/10 text-primary">

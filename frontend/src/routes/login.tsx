@@ -10,13 +10,11 @@ import { cn } from "@/lib/utils";
 import { TurnstileWidget } from "@/components/librora/turnstile-widget";
 import { useT } from "@/lib/i18n";
 import { authErrorKey } from "@/lib/auth-error";
+import { noIndexSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [
-      { title: "Sign in - Librora" },
-      { name: "description", content: "Sign in to your personal AI library." },
-    ],
+    meta: noIndexSeo("Sign in - Librora", "/login", "Sign in to your personal AI library."),
   }),
   component: LoginPage,
 });
