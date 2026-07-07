@@ -14,6 +14,7 @@ import { BillingModule } from "./billing/billing.module";
 import { BookshelfRulesModule } from "./bookshelf-rules/bookshelf-rules.module";
 import { ExportModule } from "./export/export.module";
 import { HealthController } from "./health/health.controller";
+import { QdrantModule } from "./qdrant/qdrant.module";
 import configuration from "./config/configuration";
 
 @Module({
@@ -35,6 +36,7 @@ import configuration from "./config/configuration";
     BillingModule,
     BookshelfRulesModule,
     ExportModule,
+    QdrantModule,
   ],
   controllers: [HealthController],
 })
