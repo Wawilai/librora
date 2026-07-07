@@ -58,7 +58,7 @@ export class SearchService {
     const collection = this.config.get<string>("qdrant.collection") ?? "librora_items";
 
     // Fall back to keyword if no OpenAI key configured
-    if (!apiKey) return this.keyword(userId, q, limit);
+    if (!apiKey) return this.keywordAsSemantic(userId, q, limit);
 
     // Check collection exists (items may not be embedded yet)
     let collectionExists = false;
@@ -68,7 +68,7 @@ export class SearchService {
     } catch {
       collectionExists = false;
     }
-    if (!collectionExists) return this.keyword(userId, q, limit);
+    if (!collectionExists) return this.keywordAsSemantic(userId, q, limit);
 
     // Embed the query
     const embeddingModel =
@@ -82,10 +82,12 @@ export class SearchService {
         input: q.trim(),
         dimensions: dimension,
       });
-      queryVector = embeddingResponse.data[0].embedding;
+      const vector = embeddingResponse.data?.[0]?.embedding;
+      if (!vector?.length) return this.keywordAsSemantic(userId, q, limit);
+      queryVector = vector;
     } catch {
       // OpenAI error — fall back to keyword
-      return this.keyword(userId, q, limit);
+      return this.keywordAsSemantic(userId, q, limit);
     }
 
     // Search Qdrant — filter by userId in payload so users only see their own items
@@ -106,7 +108,7 @@ export class SearchService {
       });
       qdrantResults = response;
     } catch {
-      return this.keyword(userId, q, limit);
+      return this.keywordAsSemantic(userId, q, limit);
     }
 
     await this.incrementSemanticSearchUsage(userId).catch(() => null);
@@ -135,6 +137,14 @@ export class SearchService {
       items: sorted,
       total: sorted.length,
       scores: sorted.map((i) => scoreMap.get(i.id) ?? 0),
+    };
+  }
+
+  private async keywordAsSemantic(userId: string, q: string, limit: number) {
+    const result = await this.keyword(userId, q, limit);
+    return {
+      ...result,
+      scores: result.items.map(() => 0),
     };
   }
 

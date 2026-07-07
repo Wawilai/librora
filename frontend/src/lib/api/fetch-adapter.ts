@@ -386,12 +386,14 @@ export const fetchAdapter: ApiClient = {
     },
 
     async semantic(q, limit) {
-      const data = await request<{ items: unknown[]; total: number; scores: number[] }>(
+      const data = await request<{ items: unknown[]; total: number; scores?: number[] }>(
         "POST",
         "/search/semantic",
         { q, ...(limit !== undefined ? { limit } : {}) },
       );
-      return { items: data.items.map(mapItem), total: data.total, scores: data.scores };
+      const items = data.items.map(mapItem);
+      const scores = Array.isArray(data.scores) ? data.scores : items.map(() => 0);
+      return { items, total: data.total, scores };
     },
   },
 

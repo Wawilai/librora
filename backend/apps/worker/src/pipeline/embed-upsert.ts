@@ -56,7 +56,10 @@ export async function embedAndUpsert(
     }),
   );
 
-  const vector = embeddingResponse.data[0].embedding;
+  const vector = embeddingResponse.data?.[0]?.embedding;
+  if (!vector?.length) {
+    throw new Error("OpenAI embedding response did not include a vector");
+  }
 
   await qdrant.upsert(opts.collection, {
     wait: true,
