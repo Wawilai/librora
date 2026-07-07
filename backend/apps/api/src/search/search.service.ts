@@ -16,7 +16,10 @@ export class SearchService {
     private subscriptions: SubscriptionsService,
     private config: ConfigService,
   ) {
-    this.qdrant = new QdrantClient({ url: config.get<string>("qdrant.url") });
+    this.qdrant = new QdrantClient({
+      url: config.get<string>("qdrant.url"),
+      apiKey: config.get<string>("qdrant.apiKey"),
+    });
     this.openai = new OpenAI({ apiKey: config.get<string>("openai.apiKey") ?? "" });
   }
 

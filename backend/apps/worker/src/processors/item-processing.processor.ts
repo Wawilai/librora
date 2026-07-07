@@ -68,7 +68,10 @@ export class ItemProcessingProcessor extends WorkerHost {
   ) {
     super();
     this.openai = new OpenAI({ apiKey: config.get<string>("openai.apiKey") ?? "" });
-    this.qdrant = new QdrantClient({ url: config.get<string>("qdrant.url") });
+    this.qdrant = new QdrantClient({
+      url: config.get<string>("qdrant.url"),
+      apiKey: config.get<string>("qdrant.apiKey"),
+    });
   }
 
   async process(job: Job<ItemProcessingJob>): Promise<void> {
