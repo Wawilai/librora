@@ -13,7 +13,6 @@ import { QueueModule } from "./queue/queue.module";
 import { BillingModule } from "./billing/billing.module";
 import { BookshelfRulesModule } from "./bookshelf-rules/bookshelf-rules.module";
 import { ExportModule } from "./export/export.module";
-import { QdrantModule } from "./qdrant/qdrant.module";
 import { HealthController } from "./health/health.controller";
 import configuration from "./config/configuration";
 
@@ -36,7 +35,6 @@ import configuration from "./config/configuration";
     BillingModule,
     BookshelfRulesModule,
     ExportModule,
-    QdrantModule,
   ],
   controllers: [HealthController],
 })

@@ -6,9 +6,9 @@ import { PageHeader } from "@/components/librora/page-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search as SearchIcon, Sparkles } from "lucide-react";
+import { Loader2, Search as SearchIcon, Sparkles } from "lucide-react";
 import { PremiumLockState } from "@/components/librora/premium-lock";
-import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/librora/shared-states";
+import { EmptyState, ErrorState } from "@/components/librora/shared-states";
 import { Link } from "@tanstack/react-router";
 import { StatusBadge } from "@/components/librora/status-badge";
 import { TagChip } from "@/components/librora/tag-chip";
@@ -40,6 +40,7 @@ function SearchPage() {
   const [semanticError, setSemanticError] = useState<string | null>(null);
   const [semanticUnavailable, setSemanticUnavailable] = useState(false);
   const navigate = Route.useNavigate();
+  const activeLoading = loading === mode;
 
   useEffect(() => {
     setInput(q ?? "");
@@ -125,29 +126,38 @@ function SearchPage() {
         icon={<SearchIcon className="h-5 w-5" />}
       />
 
-      <form onSubmit={submit} className="mb-6 flex gap-2">
-        <div className="relative flex-1">
-          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            autoFocus
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={t("searchPage.inputPlaceholder")}
-            className="h-11 pl-10 text-base"
-          />
-        </div>
-        <Button type="submit" className="h-11 px-5">
-          {t("searchPage.searchButton")}
-        </Button>
-      </form>
-
       <Tabs value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
-        <TabsList>
-          <TabsTrigger value="keyword">{t("searchPage.keywordTab")}</TabsTrigger>
-          <TabsTrigger value="semantic">
-            <Sparkles className="mr-1.5 h-3.5 w-3.5" /> {t("searchPage.semanticTab")}
-          </TabsTrigger>
-        </TabsList>
+        <div className="mb-3">
+          <TabsList>
+            <TabsTrigger value="keyword">{t("searchPage.keywordTab")}</TabsTrigger>
+            <TabsTrigger value="semantic">
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" /> {t("searchPage.semanticTab")}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <form onSubmit={submit} className="mb-6 flex gap-2">
+          <div className="relative flex-1">
+            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              autoFocus
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={t("searchPage.inputPlaceholder")}
+              className="h-11 pl-10 text-base"
+            />
+          </div>
+          <Button type="submit" className="h-11 min-w-28 px-5" disabled={activeLoading}>
+            {activeLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t("searchPage.searchingButton")}
+              </>
+            ) : (
+              t("searchPage.searchButton")
+            )}
+          </Button>
+        </form>
 
         <TabsContent value="keyword" className="mt-5">
           {!q ? (
@@ -156,7 +166,7 @@ function SearchPage() {
               description={t("searchPage.keywordEmptyDesc")}
             />
           ) : loading === "keyword" ? (
-            <LoadingSkeleton rows={3} />
+            <SearchLoadingState />
           ) : keywordError ? (
             <ErrorState title={t("searchPage.searchFailedTitle")} description={keywordError} />
           ) : keywordResults.length === 0 ? (
@@ -190,7 +200,7 @@ function SearchPage() {
               description={t("searchPage.semanticEmptyDesc")}
             />
           ) : loading === "semantic" ? (
-            <LoadingSkeleton rows={3} />
+            <SearchLoadingState />
           ) : semanticError ? (
             <ErrorState title={t("searchPage.semanticFailedTitle")} description={semanticError} />
           ) : semanticResults.length === 0 ? (
@@ -213,6 +223,21 @@ function SearchPage() {
           )}
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function SearchLoadingState() {
+  const t = useT();
+  return (
+    <div
+      className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-background/60 text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <Loader2 className="mb-3 h-6 w-6 animate-spin text-primary" />
+      <p className="text-sm font-medium text-foreground">{t("searchPage.searchingTitle")}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{t("searchPage.searchingDesc")}</p>
     </div>
   );
 }

@@ -1,17 +1,9 @@
 export default () => ({
   database: {
-    // Falls back to DATABASE_URL for any dev tooling (prisma studio, ad-hoc
-    // scripts) that doesn't know about the per-app split.
-    url: process.env.DATABASE_URL_WORKER ?? process.env.DATABASE_URL,
+    url: process.env.DATABASE_URL,
   },
   redis: {
     url: process.env.REDIS_URL ?? "redis://localhost:6379",
-  },
-  qdrant: {
-    url: process.env.QDRANT_URL ?? "http://localhost:6333",
-    apiKey: process.env.QDRANT_API_KEY ?? "",
-    collection: process.env.QDRANT_COLLECTION ?? "librora_items",
-    dimension: parseInt(process.env.OPENAI_EMBEDDING_DIMENSION ?? "1536", 10),
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY ?? "",

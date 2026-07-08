@@ -4,11 +4,10 @@ import { Job } from "bullmq";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../prisma/prisma.service";
 import OpenAI from "openai";
-import { QdrantClient } from "@qdrant/js-client-rest";
 import { fetchUrl, FetchError } from "../pipeline/fetch-url";
 import { extractMetadata, extractContent } from "../pipeline/extract-content";
 import { runAiFeatures } from "../pipeline/ai-features";
-import { embedAndUpsert, ensureCollection } from "../pipeline/embed-upsert";
+import { embedAndUpsert } from "../pipeline/embed-upsert";
 import { currentBillingPeriod } from "../common/billing-period.util";
 
 const PLAN_LIMITS = {
@@ -59,8 +58,6 @@ const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY ?? "3", 10);
 export class ItemProcessingProcessor extends WorkerHost {
   private readonly logger = new Logger(ItemProcessingProcessor.name);
   private readonly openai: OpenAI;
-  private readonly qdrant: QdrantClient;
-  private collectionReady = false;
 
   constructor(
     private prisma: PrismaService,
@@ -68,10 +65,6 @@ export class ItemProcessingProcessor extends WorkerHost {
   ) {
     super();
     this.openai = new OpenAI({ apiKey: config.get<string>("openai.apiKey") ?? "" });
-    this.qdrant = new QdrantClient({
-      url: config.get<string>("qdrant.url"),
-      apiKey: config.get<string>("qdrant.apiKey"),
-    });
   }
 
   async process(job: Job<ItemProcessingJob>): Promise<void> {
@@ -239,36 +232,26 @@ export class ItemProcessingProcessor extends WorkerHost {
             }
           }
 
-          // Step 7: embed + upsert to Qdrant
+          // Step 7: embed + upsert vector chunks to Postgres/pgvector
           this.logger.log(`[${itemId}] step 7: embed`);
           try {
-            const collection = this.config.get<string>("qdrant.collection") ?? "librora_items";
-            const dimension = this.config.get<number>("qdrant.dimension") ?? 1536;
-            if (!this.collectionReady) {
-              await ensureCollection(this.qdrant, collection, dimension);
-              this.collectionReady = true;
-            }
             await embedAndUpsert(
               this.openai,
-              this.qdrant,
+              this.prisma,
               {
                 embeddingModel:
                   this.config.get<string>("openai.embeddingModel") ?? "text-embedding-3-small",
-                collection,
-                dimension,
+                dimension: this.config.get<number>("openai.embeddingDimension") ?? 1536,
               },
               itemId,
               readable.text,
               {
                 userId,
-                url: finalUrl,
                 title: metadata.extractedTitle,
-                domain: metadata.domain,
-                tags: aiResult?.tags ?? [],
               },
             );
           } catch (err) {
-            this.logger.warn(`[${itemId}] Qdrant embed failed (non-fatal): ${String(err)}`);
+            this.logger.warn(`[${itemId}] vector embed failed (non-fatal): ${String(err)}`);
           }
         }
       }

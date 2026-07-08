@@ -4,9 +4,6 @@ import {
   ConflictException,
   ForbiddenException,
 } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { QdrantClient } from "@qdrant/js-client-rest";
-import { createHash } from "crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { QueueService } from "../queue/queue.service";
 import { CreateItemDto } from "./dto/create-item.dto";
@@ -18,36 +15,12 @@ const PLAN_LIMITS = {
   PREMIUM: { reprocess: 50 },
 } as const;
 
-// Mirrors backend/apps/worker/src/pipeline/embed-upsert.ts's itemIdToUuid —
-// duplicated per-app rather than shared (see CLAUDE.md: api/worker don't
-// share code by design). Needed to compute the same deterministic Qdrant
-// point ID the worker used when embedding, so a deleted item's vector can be
-// removed by ID rather than left as a permanent orphan.
-function itemIdToUuid(itemId: string): string {
-  const hex = createHash("sha256").update(itemId).digest("hex");
-  return [
-    hex.slice(0, 8),
-    hex.slice(8, 12),
-    "4" + hex.slice(13, 16),
-    ((parseInt(hex[16], 16) & 0x3) | 0x8).toString(16) + hex.slice(17, 20),
-    hex.slice(20, 32),
-  ].join("-");
-}
-
 @Injectable()
 export class LibraryItemsService {
-  private readonly qdrant: QdrantClient;
-
   constructor(
     private prisma: PrismaService,
     private queue: QueueService,
-    private config: ConfigService,
-  ) {
-    this.qdrant = new QdrantClient({
-      url: this.config.get<string>("qdrant.url"),
-      apiKey: this.config.get<string>("qdrant.apiKey"),
-    });
-  }
+  ) {}
 
   // ── List (with filters) ───────────────────────────────────────────────────
 
@@ -300,15 +273,7 @@ export class LibraryItemsService {
       where: { id },
       data: { deletedAt: new Date() },
     });
-    // Soft-deleted items are permanently gone from the user's perspective
-    // (there's no Trash/undo) but their Qdrant vector otherwise lives on
-    // forever — later semantic searches would still match it, then silently
-    // return zero rehydrated results once its LibraryItem row is excluded by
-    // the deletedAt filter. Delete-by-ID is fire-and-forget: a failure here
-    // shouldn't block the item deletion itself, just leaves one more orphan
-    // for the next cleanup.
-    const collection = this.config.get<string>("qdrant.collection") ?? "librora_items";
-    this.qdrant.delete(collection, { points: [itemIdToUuid(id)] }).catch(() => null);
+    await this.prisma.$executeRaw`DELETE FROM "item_embeddings" WHERE "item_id" = ${id}`;
   }
 
   async reprocess(userId: string, id: string) {

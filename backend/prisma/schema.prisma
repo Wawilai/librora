@@ -182,12 +182,30 @@ model LibraryItem {
   tags          ItemTag[]
   tocEntries    TocEntry[]
   processingJob ProcessingJob?
+  embeddings    ItemEmbedding[]
 
   @@unique([userId, urlNorm])
   @@index([userId, archived, deletedAt])
   @@index([userId, status])
   @@index([userId, inReadingList])
   @@map("library_items")
+}
+
+model ItemEmbedding {
+  id        String   @id @default(cuid())
+  itemId    String   @map("item_id")
+  userId    String   @map("user_id")
+  chunkIndex Int     @map("chunk_index")
+  text      String
+  embedding Unsupported("vector(1536)")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  item LibraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, chunkIndex])
+  @@index([userId])
+  @@index([itemId])
+  @@map("item_embeddings")
 }
 
 enum ItemStatus {

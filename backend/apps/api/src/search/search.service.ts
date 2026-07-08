@@ -2,13 +2,11 @@ import { Injectable, ForbiddenException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../prisma/prisma.service";
 import { SubscriptionsService } from "../subscriptions/subscriptions.service";
-import { QdrantClient } from "@qdrant/js-client-rest";
 import OpenAI from "openai";
 import { currentBillingPeriod } from "../common/billing-period.util";
 
 @Injectable()
 export class SearchService {
-  private readonly qdrant: QdrantClient;
   private readonly openai: OpenAI;
 
   constructor(
@@ -16,10 +14,6 @@ export class SearchService {
     private subscriptions: SubscriptionsService,
     private config: ConfigService,
   ) {
-    this.qdrant = new QdrantClient({
-      url: config.get<string>("qdrant.url"),
-      apiKey: config.get<string>("qdrant.apiKey"),
-    });
     this.openai = new OpenAI({ apiKey: config.get<string>("openai.apiKey") ?? "" });
   }
 
@@ -35,6 +29,7 @@ export class SearchService {
           { title: { contains: q, mode: "insensitive" } },
           { extractedTitle: { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
+          { readableContent: { contains: q, mode: "insensitive" } },
           { domain: { contains: q, mode: "insensitive" } },
           { personalNote: { contains: q, mode: "insensitive" } },
           { tags: { some: { tag: { contains: q, mode: "insensitive" } } } },
@@ -58,20 +53,9 @@ export class SearchService {
     }
 
     const apiKey = this.config.get<string>("openai.apiKey");
-    const collection = this.config.get<string>("qdrant.collection") ?? "librora_items";
 
     // Fall back to keyword if no OpenAI key configured
     if (!apiKey) return this.keywordAsSemantic(userId, q, limit);
-
-    // Check collection exists (items may not be embedded yet)
-    let collectionExists = false;
-    try {
-      const info = await this.qdrant.collectionExists(collection);
-      collectionExists = info.exists;
-    } catch {
-      collectionExists = false;
-    }
-    if (!collectionExists) return this.keywordAsSemantic(userId, q, limit);
 
     // Embed the query
     const embeddingModel =
@@ -93,36 +77,46 @@ export class SearchService {
       return this.keywordAsSemantic(userId, q, limit);
     }
 
-    // Search Qdrant — filter by userId in payload so users only see their own items
+    // Search embedded chunks in Postgres/pgvector. The top chunks are grouped
+    // back to items so a long article can match from any embedded section.
     const cappedLimit = Math.min(limit, this.config.get<number>("search.maxLimit") ?? 50);
     const minScore = this.config.get<number>("search.minScore") ?? 0.3;
+    const vector = `[${queryVector.join(",")}]`;
 
-    let qdrantResults: Array<{ id: string | number; score: number }> = [];
+    let vectorResults: Array<{ itemId: string; score: number }> = [];
     try {
-      const response = await this.qdrant.search(collection, {
-        vector: queryVector,
-        limit: cappedLimit,
-        score_threshold: minScore,
-        filter: {
-          must: [{ key: "userId", match: { value: userId } }],
-        },
-        with_payload: true,
-        with_vector: false,
-      });
-      qdrantResults = response;
+      vectorResults = await this.prisma.$queryRaw`
+        WITH ranked_chunks AS (
+          SELECT
+            ie."item_id" AS "itemId",
+            1 - (ie."embedding" <=> ${vector}::vector) AS "score"
+          FROM "item_embeddings" ie
+          INNER JOIN "library_items" li ON li."id" = ie."item_id"
+          WHERE
+            ie."user_id" = ${userId}
+            AND li."deleted_at" IS NULL
+            AND li."archived" = false
+          ORDER BY ie."embedding" <=> ${vector}::vector
+          LIMIT ${cappedLimit * 5}
+        )
+        SELECT "itemId", MAX("score")::float AS "score"
+        FROM ranked_chunks
+        WHERE "score" >= ${minScore}
+        GROUP BY "itemId"
+        ORDER BY "score" DESC
+        LIMIT ${cappedLimit}
+      `;
     } catch {
       return this.keywordAsSemantic(userId, q, limit);
     }
 
     await this.incrementSemanticSearchUsage(userId).catch(() => null);
 
-    if (!qdrantResults.length) return { items: [], total: 0, scores: [] };
+    if (!vectorResults.length) return this.keywordAsSemantic(userId, q, limit);
 
-    // Rehydrate — Qdrant stores the original cuid as itemId in payload
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ids = qdrantResults.map((r) => ((r as any).payload?.itemId as string | undefined) ?? String(r.id));
+    const ids = vectorResults.map((r) => r.itemId);
     const scoreMap = new Map(
-      qdrantResults.map((r, i) => [ids[i], r.score]),
+      vectorResults.map((r) => [r.itemId, r.score]),
     );
 
     const items = await this.prisma.libraryItem.findMany({
@@ -130,7 +124,7 @@ export class SearchService {
       include: { tags: true },
     });
 
-    // Return in Qdrant score order (most similar first)
+    // Return in vector score order (most similar first)
     const sorted = items.sort(
       (a, b) => (scoreMap.get(b.id) ?? 0) - (scoreMap.get(a.id) ?? 0),
     );

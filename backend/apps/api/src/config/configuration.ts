@@ -2,17 +2,10 @@ export default () => ({
   port: parseInt(process.env.API_PORT ?? process.env.PORT ?? "3001", 10),
   webBaseUrl: process.env.WEB_BASE_URL ?? "http://localhost:5173",
   database: {
-    // Falls back to DATABASE_URL for any dev tooling (prisma studio, ad-hoc
-    // scripts) that doesn't know about the per-app split.
-    url: process.env.DATABASE_URL_API ?? process.env.DATABASE_URL,
+    url: process.env.DATABASE_URL,
   },
   redis: {
     url: process.env.REDIS_URL ?? "redis://localhost:6379",
-  },
-  qdrant: {
-    url: process.env.QDRANT_URL ?? "http://localhost:6333",
-    apiKey: process.env.QDRANT_API_KEY ?? "",
-    collection: process.env.QDRANT_COLLECTION ?? "librora_items",
   },
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET!,
@@ -33,7 +26,7 @@ export default () => ({
     fetchMaxBytes: parseInt(process.env.FETCH_MAX_RESPONSE_BYTES ?? "5242880", 10),
   },
   search: {
-    minScore: parseFloat(process.env.SEMANTIC_MIN_SCORE ?? "0.7"),
+    minScore: parseFloat(process.env.SEMANTIC_MIN_SCORE ?? "0.2"),
     defaultLimit: parseInt(process.env.SEMANTIC_DEFAULT_LIMIT ?? "10", 10),
     maxLimit: parseInt(process.env.SEMANTIC_MAX_LIMIT ?? "50", 10),
   },

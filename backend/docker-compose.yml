@@ -1,6 +1,6 @@
 # Librora — Local Development Services
 # PostgreSQL is on Supabase — not here.
-# Only Redis (queue) and Qdrant (vector search) run locally.
+# Only Redis (queue) runs locally. Vector search uses PostgreSQL/pgvector.
 
 services:
   redis:
@@ -17,17 +17,5 @@ services:
       timeout: 5s
       retries: 5
 
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: librora_qdrant
-    ports:
-      - "6333:6333"   # HTTP API + Web UI
-      - "6334:6334"   # gRPC
-    volumes:
-      - qdrant_data:/qdrant/storage
-    environment:
-      - QDRANT__SERVICE__GRPC_PORT=6334
-
 volumes:
   redis_data:
-  qdrant_data:
