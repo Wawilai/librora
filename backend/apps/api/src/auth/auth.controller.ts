@@ -21,15 +21,20 @@ import { RateLimit } from "../common/rate-limit/rate-limit.decorator";
 import { z } from "zod";
 
 const REFRESH_COOKIE = "refresh_token";
+const isProduction = process.env.NODE_ENV === "production";
 const COOKIE_OPTS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  // "strict" drops the cookie on the first request of any cross-site
-  // top-level navigation — including the redirect back from Stripe's
-  // hosted billing portal/checkout, which logged users out on return.
-  // "lax" still sends it on top-level GET navigations while blocking it
-  // on cross-site subresource/POST requests, so CSRF protection holds.
-  sameSite: "lax" as const,
+  secure: isProduction,
+  // In production the frontend and API are deployed as separate Railway
+  // services on different `*.up.railway.app` subdomains — `up.railway.app`
+  // is on the public suffix list, so those subdomains are cross-site to
+  // each other, not just cross-origin. Every fetch()-based refresh call is
+  // therefore a cross-site subresource request: both "strict" and "lax"
+  // drop the cookie on those (they only differ on top-level navigation),
+  // so only "none" (paired with mandatory Secure) actually delivers the
+  // cookie. Locally frontend/api share `localhost`, so "lax" is fine there
+  // and avoids requiring HTTPS in dev.
+  sameSite: (isProduction ? "none" : "lax") as const,
   path: "/api/v1/auth",
   maxAge: 60 * 60 * 24 * 30, // 30 days
 };
