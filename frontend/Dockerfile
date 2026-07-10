@@ -33,6 +33,9 @@ ENV VITE_TURNSTILE_SITE_KEY=${VITE_TURNSTILE_SITE_KEY}
 # not a hypothetical one.
 ARG VITE_EXTENSION_ID
 ENV VITE_EXTENSION_ID=${VITE_EXTENSION_ID}
+# Chrome Web Store listing URL, linked from the /extension page's install CTA.
+ARG VITE_EXTENSION_STORE_URL
+ENV VITE_EXTENSION_STORE_URL=${VITE_EXTENSION_STORE_URL}
 # Canonical/social URL is also baked into the client/SSR build.
 ARG VITE_SITE_URL
 ENV VITE_SITE_URL=${VITE_SITE_URL}

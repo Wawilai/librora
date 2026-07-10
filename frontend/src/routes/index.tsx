@@ -637,6 +637,9 @@ function Footer() {
           <Link to="/login" className="hover:text-foreground">
             {t("landing.footer.login")}
           </Link>
+          <Link to="/privacy" className="hover:text-foreground">
+            {t("landing.footer.privacy")}
+          </Link>
         </div>
         <p className="type-caption sm:text-right">
           {t("landing.footer.copyright", { year: String(new Date().getFullYear()) })}

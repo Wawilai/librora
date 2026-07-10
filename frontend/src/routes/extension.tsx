@@ -7,13 +7,7 @@ import {
   CheckCircle2,
   CircleAlert,
   CircleDashed,
-  Download,
-  FolderOpen,
-  ToggleRight,
-  FolderInput,
   Puzzle,
-  Copy,
-  Check,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { pingExtension, handoffToExtension } from "@/lib/extension-bridge";
@@ -36,6 +30,9 @@ export const Route = createFileRoute("/extension")({
 });
 
 type Status = "checking" | "not-installed" | "connecting" | "connected" | "error";
+
+const STORE_URL =
+  import.meta.env.VITE_EXTENSION_STORE_URL || "https://chromewebstore.google.com/detail/librora";
 
 function ExtensionPage() {
   const signedIn = useStore((s) => s.signedIn);
@@ -102,41 +99,26 @@ function ExtensionPage() {
           </p>
 
           <div className="mt-4 rounded-lg border border-border bg-muted/30 p-4 text-sm">
-            <p className="font-medium text-foreground">{t("extensionPage.downloadTitle")}</p>
+            <p className="font-medium text-foreground">{t("extensionPage.installTitleStore")}</p>
             <Button asChild className="mt-3 w-full sm:w-auto">
-              <a href="/librora-clipper.zip" download>
-                <Download className="mr-1.5 h-4 w-4" /> {t("extensionPage.downloadButton")}
+              <a href={STORE_URL} target="_blank" rel="noopener noreferrer">
+                <Chrome className="mr-1.5 h-4 w-4" /> {t("extensionPage.storeButton")}
               </a>
             </Button>
-            <p className="mt-2 text-xs text-muted-foreground">{t("extensionPage.downloadHint")}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {t("extensionPage.storeButtonHint")}
+            </p>
 
             <div className="mt-4 space-y-3">
               <StepCard
                 index={1}
-                title={t("extensionPage.step1")}
-                caption={t("extensionPage.step1Caption")}
-              >
-                <UnzipMock />
-              </StepCard>
+                title={t("extensionPage.storeStep1")}
+                caption={t("extensionPage.storeStep1Caption")}
+              />
               <StepCard
                 index={2}
-                title={t("extensionPage.step2")}
-                caption={t("extensionPage.step2Caption")}
-              >
-                <ExtensionsPageMock />
-                <CopyChromeUrlButton />
-              </StepCard>
-              <StepCard
-                index={3}
-                title={t("extensionPage.step3")}
-                caption={t("extensionPage.step3Caption")}
-              >
-                <LoadUnpackedMock />
-              </StepCard>
-              <StepCard
-                index={4}
-                title={t("extensionPage.step4")}
-                caption={t("extensionPage.step4Caption")}
+                title={t("extensionPage.storeStep2")}
+                caption={t("extensionPage.storeStep2Caption")}
               >
                 <ToolbarPinMock />
               </StepCard>
@@ -235,7 +217,7 @@ function StepCard({
   index: number;
   title: string;
   caption: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }) {
   return (
     <div className="rounded-lg border border-border bg-background p-3.5">
@@ -253,28 +235,6 @@ function StepCard({
   );
 }
 
-function CopyChromeUrlButton() {
-  const t = useT();
-  const [copied, setCopied] = useState(false);
-
-  const copy = () => {
-    navigator.clipboard
-      .writeText("chrome://extensions")
-      .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      })
-      .catch(() => null);
-  };
-
-  return (
-    <Button variant="outline" size="sm" className="mt-2 gap-1.5 text-xs" onClick={copy}>
-      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-      {copied ? t("extensionPage.copied") : t("extensionPage.copyPath")}
-    </Button>
-  );
-}
-
 // ── Lightweight step illustrations (not real screenshots — small mockups in
 // the app's existing visual style, matching BrowserChrome/ItemCardMock on the
 // landing page) ───────────────────────────────────────────────────────────
@@ -286,42 +246,6 @@ function MockWindowChrome({ label }: { label: string }) {
       <span className="h-2 w-2 rounded-full bg-muted-foreground/25" />
       <span className="h-2 w-2 rounded-full bg-muted-foreground/25" />
       <span className="ml-2 truncate text-[10px] text-muted-foreground">{label}</span>
-    </div>
-  );
-}
-
-function UnzipMock() {
-  return (
-    <div className="max-w-[220px] rounded-md border border-border bg-muted/30 p-3">
-      <MockWindowChrome label="Downloads" />
-      <div className="mt-2 flex items-center gap-2 rounded border border-dashed border-border p-2">
-        <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <span className="truncate text-[11px] text-muted-foreground">librora-clipper/</span>
-      </div>
-    </div>
-  );
-}
-
-function ExtensionsPageMock() {
-  return (
-    <div className="max-w-[260px] rounded-md border border-border bg-muted/30 p-3">
-      <MockWindowChrome label="chrome://extensions" />
-      <div className="mt-2 flex items-center justify-between rounded border border-border bg-background px-2 py-1.5">
-        <span className="text-[11px] text-muted-foreground">Developer mode</span>
-        <ToggleRight className="h-4 w-4 text-primary" />
-      </div>
-    </div>
-  );
-}
-
-function LoadUnpackedMock() {
-  return (
-    <div className="max-w-[260px] rounded-md border border-border bg-muted/30 p-3">
-      <MockWindowChrome label="chrome://extensions" />
-      <div className="mt-2 inline-flex items-center gap-1.5 rounded border border-border bg-background px-2 py-1.5 text-[11px] text-foreground">
-        <FolderInput className="h-3.5 w-3.5 text-primary" />
-        Load unpacked
-      </div>
     </div>
   );
 }

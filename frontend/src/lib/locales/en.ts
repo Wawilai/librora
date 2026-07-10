@@ -272,20 +272,14 @@ export const en = {
     subtitle: "Browser extension integration",
     description:
       "Once installed and connected, click the Librora icon in your browser toolbar on any page to save it to your library in one click - no need to open this app first.",
-    downloadTitle: "Install",
-    downloadButton: "Download for Chrome / Edge / Brave",
-    downloadHint: "Not on the Chrome Web Store yet — this is a direct download of the extension.",
-    step1: "Unzip the downloaded file",
-    step1Caption: "Extract librora-clipper.zip anywhere you'll remember, like Downloads.",
-    step2: "Open chrome://extensions, enable Developer mode",
-    step2Caption: "The toggle is in the top-right corner of that page.",
-    step3: 'Click "Load unpacked" and select the unzipped folder',
-    step3Caption: "The button appears once Developer mode is on.",
-    step4: "The Librora icon appears in your toolbar",
-    step4Caption: 'Pin it for one-click access: toolbar puzzle icon → pin next to "Librora".',
+    installTitleStore: "Install",
+    storeButton: "Add to Chrome",
+    storeButtonHint: "Available on the Chrome Web Store — also works in Edge and Brave.",
+    storeStep1: 'Click "Add to Chrome" and confirm',
+    storeStep1Caption: "Chrome will ask you to approve the extension's permissions.",
+    storeStep2: "The Librora icon appears in your toolbar",
+    storeStep2Caption: 'Pin it for one-click access: toolbar puzzle icon → pin next to "Librora".',
     comeBack: "Come back to this page - it will connect automatically",
-    copyPath: "Copy chrome://extensions",
-    copied: "Copied!",
     manualBuildToggle: "Building from source instead?",
     installTitle: "Install (developer build)",
     buildInstruction: "Build the extension:",
@@ -759,12 +753,44 @@ export const en = {
       plans: "Plans",
       clipper: "Clipper",
       login: "Login",
+      privacy: "Privacy",
       copyright: "Private by default. © {year} Librora.",
     },
     semanticMock: {
       query: "articles about building familiarity in remote teams",
       chipQuery: "articles about writers' discipline",
     },
+  },
+  privacyPage: {
+    title: "Privacy Policy",
+    updated: "Last updated: {date}",
+    intro:
+      "This page explains what the Librora web app and the Library Clipper browser extension collect, store, and send, and why.",
+    accountTitle: "Account data",
+    accountBody:
+      "When you create a Librora account we store your email address, a hashed password, and your subscription/plan status. This is used only to authenticate you and operate the service.",
+    libraryTitle: "Library content",
+    libraryBody:
+      "Pages you save are fetched and processed (extracted text, AI-generated tags/summary, and a search embedding) so they can be stored in your personal library and searched later. This content is private to your account by default.",
+    extensionTitle: "Library Clipper extension",
+    extensionBody:
+      "The extension only acts when you click its icon. At that point it reads the current tab's URL, page title, and any note you type, and sends them to the Librora API to save that page to your library. It stores a short-lived access token (linked to your signed-in Librora account) in the browser's session storage so it doesn't ask you to sign in again on every click. The extension does not read page content in the background, does not track your browsing history, and does not send data to anyone other than the Librora API.",
+    permissionsTitle: "Why the extension asks for these permissions",
+    permissionsList: [
+      "storage — to keep your sign-in session so Save works without logging in every time.",
+      "activeTab — to read the URL/title of the tab you click Save on, and only that tab.",
+      "notifications — to show a confirmation when a save succeeds or fails.",
+      "alarms — to refresh your session token before it expires.",
+    ],
+    thirdPartyTitle: "Third-party processors",
+    thirdPartyBody:
+      "We use Supabase (database hosting), Resend (transactional email), Stripe (billing for Premium), and Qdrant (search index) to operate Librora. None of these receive your Librora password. We do not sell your data or share it with advertisers.",
+    retentionTitle: "Data retention & deletion",
+    retentionBody:
+      "Deleting your account schedules permanent removal of your library and account data after a short grace period, in case the deletion was accidental.",
+    contactTitle: "Contact",
+    contactBody: "Questions about this policy? Reach out at {email}.",
+    backHome: "Back home",
   },
 };
 

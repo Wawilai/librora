@@ -32,6 +32,12 @@ if (hasLocalOrigin && process.env.ALLOW_LOCAL_EXTENSION_ZIP !== "1") {
   );
   process.exit(1);
 }
+if (manifest.key && process.env.ALLOW_KEYED_EXTENSION_ZIP !== "1") {
+  console.error(
+    'Refusing to package an extension zip with a "key" field — Chrome Web Store rejects this on upload. Run "bun run build:store" (not "bun run build") before packaging for the store.',
+  );
+  process.exit(1);
+}
 
 await mkdir(outDir, { recursive: true });
 
